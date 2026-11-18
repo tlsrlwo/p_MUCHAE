@@ -16,12 +16,14 @@ namespace muchae
         {
             if (movement.MoveInput.magnitude < InputThreshold)
             {
+                // 인풋값이 0.1보다 낮을 경우 Idle 로 전환
                 movement.ChangeState(movement.IdleState);
                 return;
             }
 
             if (movement.RunInput)
             {
+                // 달리기 버튼이 눌렸을 경우 달리기로 전환
                 movement.ChangeState(movement.RunState);
                 return;
             }

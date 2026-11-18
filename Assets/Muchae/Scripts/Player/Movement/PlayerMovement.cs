@@ -25,20 +25,16 @@ namespace muchae
         public bool IsGrounded { get; private set; }
 
 
-        // 
+        // FSM 에서 사용할 수 있는 읽기전용 프로퍼티 선언
         public Vector2 MoveInput => _pInput.MoveInput;
         public bool RunInput => _pInput.RunInput;
         public float WalkSpeed => _walkSpeed;
         public float RunSpeed => _runSpeed;
 
-
         private float _verticalVelocity;
 
         // 바닥 체크
-        private Vector3 GroundCheckPosition =>
-                        transform.position + Vector3.down * _groundCheckYOffset;
-
-
+        private Vector3 GroundCheckPosition => transform.position + Vector3.down * _groundCheckYOffset;
 
         #region 플레이어 FSM
         private PlayerStateBase _currentState;
@@ -87,6 +83,7 @@ namespace muchae
             // 바닥체크 
             IsGrounded = CheckGrounded();
 
+            // 인풋 값을 가져오되, 1을 넘기지 않도록 설정
             Vector2 input = Vector2.ClampMagnitude(MoveInput, 1f);
 
             // 수평 이동 계산
