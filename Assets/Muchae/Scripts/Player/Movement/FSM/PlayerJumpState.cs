@@ -11,7 +11,7 @@ namespace muchae
 
         public override void UpdateState(PlayerMovement movement)
         {
-            ovement.ChangeState(movement.IdleState);
+            movement.ChangeState(movement.IdleState);
             return;
         }
 

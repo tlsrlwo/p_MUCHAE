@@ -28,7 +28,7 @@ MonoBehaviour:
     - iconNameOrGuid: 
       colorIndex: 1
       isIconRecursive: 0
-      isColorRecursive: 0
+      isColorRecursive: 1
     - iconNameOrGuid: 
       colorIndex: 1
       isIconRecursive: 0
@@ -40,7 +40,7 @@ MonoBehaviour:
     - iconNameOrGuid: 
       colorIndex: 1
       isIconRecursive: 0
-      isColorRecursive: 0
+      isColorRecursive: 1
     - iconNameOrGuid: 
       colorIndex: 1
       isIconRecursive: 0
