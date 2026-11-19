@@ -2,6 +2,12 @@ using UnityEngine;
 
 namespace muchae
 {
+    public enum PlayerAnimationState
+    {
+        Idle = 0,
+        Walk = 1,
+        Run = 2
+    }
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(PlayerInputReader))]
     public class PlayerMovement : MonoBehaviour
@@ -20,6 +26,8 @@ namespace muchae
         [Header("참조")]
         private CharacterController _cController;
         private PlayerInputReader _pInput;
+
+        private Animator _anim;
 
         public float CurrentSpeed { get; set; }
         public bool IsGrounded { get; private set; }
@@ -49,6 +57,7 @@ namespace muchae
         {
             _cController = GetComponent<CharacterController>();
             _pInput = GetComponent<PlayerInputReader>();
+            _anim = GetComponentInChildren<Animator>();
         }
 
         private void Start()
@@ -61,8 +70,8 @@ namespace muchae
             _currentState?.UpdateState(this);
             Move();
         }
-        
-           public void ChangeState(PlayerStateBase newState)
+
+        public void ChangeState(PlayerStateBase newState)
         {
             // 오류 방지
             if (newState == null || newState == _currentState)
@@ -76,8 +85,18 @@ namespace muchae
             _currentState.EnterState(this);
         }
 
+        #region 애니메이션
+        // 애니메이션 제어
+        public void SetAnimationState(PlayerAnimationState state)
+        {
+            _anim.SetInteger("PlayerState", (int)state);
+        }
 
-
+        public void SetIdleVariant(int index)
+        {
+            _anim.SetFloat("IdleVariant", index);   
+        }
+#endregion
         private void Move()
         {
             // 바닥체크 
@@ -85,6 +104,10 @@ namespace muchae
 
             // 인풋 값을 가져오되, 1을 넘기지 않도록 설정
             Vector2 input = Vector2.ClampMagnitude(MoveInput, 1f);
+
+            // 애니메이션 파라미터 연결
+            _anim.SetFloat("xInput", input.x);
+            _anim.SetFloat("zInput", input.y);
 
             // 수평 이동 계산
             Vector3 horizontalVelocity = new Vector3(input.x, 0f, input.y) * CurrentSpeed;
@@ -96,21 +119,21 @@ namespace muchae
 
             _cController.Move(velocity * Time.deltaTime);
         }
-        
-/*  수평 이동 계산기
-        private Vector3 CalculateHorizontalVelocity()
-        {
-            // 인풋 값 가져와서 최대값을 1로 설정
-            Vector2 input = Vector2.ClampMagnitude(_pInput.MoveInput, 1f);
 
-            // 현재 속도 지정하기
-            float speed = _pInput.RunInput ? _runSpeed : _walkSpeed;
+        /*  수평 이동 계산기
+                private Vector3 CalculateHorizontalVelocity()
+                {
+                    // 인풋 값 가져와서 최대값을 1로 설정
+                    Vector2 input = Vector2.ClampMagnitude(_pInput.MoveInput, 1f);
 
-            // 수평 이동속도 지정하기 
-            CurrentSpeed = input.sqrMagnitude > 0f ? speed : 0f;
+                    // 현재 속도 지정하기
+                    float speed = _pInput.RunInput ? _runSpeed : _walkSpeed;
 
-            return new Vector3(input.x, 0, input.y) * speed;
-        } */
+                    // 수평 이동속도 지정하기 
+                    CurrentSpeed = input.sqrMagnitude > 0f ? speed : 0f;
+
+                    return new Vector3(input.x, 0, input.y) * speed;
+                } */
 
         private void UpdateVerticalVelocity()
         {

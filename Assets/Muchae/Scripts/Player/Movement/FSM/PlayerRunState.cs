@@ -9,6 +9,7 @@ namespace muchae
         public override void EnterState(PlayerMovement movement)
         {
             Debug.Log("현재 상태 : 달리기");
+            movement.SetAnimationState(PlayerAnimationState.Run);
             movement.CurrentSpeed = movement.RunSpeed;
         }
 

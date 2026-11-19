@@ -266,7 +266,6 @@ GameObject:
   m_Component:
   - component: {fileID: 816119388}
   - component: {fileID: 816119391}
-  - component: {fileID: 816119394}
   - component: {fileID: 816119392}
   - component: {fileID: 816119390}
   - component: {fileID: 816119389}
@@ -393,28 +392,6 @@ MonoBehaviour:
   m_DefaultActionMap: PlayerIngame
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!95 &816119394
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 816119387}
-  m_Enabled: 1
-  m_Avatar: {fileID: 9000000, guid: 10038fdbf93c4dd43af9ce774d03a956, type: 3}
-  m_Controller: {fileID: 9100000, guid: e660ef7b25b0b8e459156a06e83990f6, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &967736442
 GameObject:
   m_ObjectHideFlags: 0
@@ -650,7 +627,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 50, y: 1, z: 50}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -7045,6 +7022,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8887591266126185840}
+  - component: {fileID: 8887591266126185841}
   m_Layer: 0
   m_Name: PicoChan
   m_TagString: Untagged
@@ -10959,6 +10937,28 @@ Transform:
   - {fileID: 5024818781510037611}
   m_Father: {fileID: 816119388}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &8887591266126185841
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5306642943654091568}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: 10038fdbf93c4dd43af9ce774d03a956, type: 3}
+  m_Controller: {fileID: 9100000, guid: e660ef7b25b0b8e459156a06e83990f6, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!4 &8985287893101735490
 Transform:
   m_ObjectHideFlags: 0
