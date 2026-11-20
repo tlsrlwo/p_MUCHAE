@@ -27,7 +27,9 @@ namespace muchae
         private CharacterController _cController;
         private PlayerInputReader _pInput;
 
+        [Header("애니메이션")]
         private Animator _anim;
+        [SerializeField] private float _animDampTime 0.1f;      // 값이 작으면 입력 변화에 빠르게 반응, 애니메이션 파라미터를 부드럽게 보간하기 위한 Damp 변수           
 
         public float CurrentSpeed { get; set; }
         public bool IsGrounded { get; private set; }
@@ -44,13 +46,13 @@ namespace muchae
         // 바닥 체크
         private Vector3 GroundCheckPosition => transform.position + Vector3.down * _groundCheckYOffset;
 
-        #region 플레이어 FSM
+#region 플레이어 FSM
         private PlayerStateBase _currentState;
 
         public PlayerIdleState IdleState = new PlayerIdleState();
         public PlayerWalkState WalkState = new PlayerWalkState();
         public PlayerRunState RunState = new PlayerRunState();
-        #endregion
+#endregion
 
 
         private void Awake()
@@ -58,6 +60,12 @@ namespace muchae
             _cController = GetComponent<CharacterController>();
             _pInput = GetComponent<PlayerInputReader>();
             _anim = GetComponentInChildren<Animator>();
+            if(_anim == null)
+            {
+                Debug.LogWarning("[PlayerMovement] Animator 컴포넌트를 참조할 수 없습니다.", this);
+                enabled = false;
+                return;
+            }
         }
 
         private void Start()
@@ -85,18 +93,21 @@ namespace muchae
             _currentState.EnterState(this);
         }
 
-        #region 애니메이션
+#region 애니메이션
         // 애니메이션 제어
         public void SetAnimationState(PlayerAnimationState state)
         {
+            if(_anim == null) return;
             _anim.SetInteger("PlayerState", (int)state);
         }
 
         public void SetIdleVariant(int index)
         {
+            if(_anim == null) return;
             _anim.SetFloat("IdleVariant", index);   
         }
 #endregion
+
         private void Move()
         {
             // 바닥체크 
@@ -106,8 +117,12 @@ namespace muchae
             Vector2 input = Vector2.ClampMagnitude(MoveInput, 1f);
 
             // 애니메이션 파라미터 연결
-            _anim.SetFloat("xInput", input.x);
-            _anim.SetFloat("zInput", input.y);
+            if(_anim!= null)
+            {
+                _anim.SetFloat("xInput", input.x, _animDampTime, Time.deltaTime);
+                _anim.SetFloat("zInput", input.y, _animDampTime, Time.deltaTime);
+            }
+            
 
             // 수평 이동 계산
             Vector3 horizontalVelocity = new Vector3(input.x, 0f, input.y) * CurrentSpeed;
@@ -133,7 +148,8 @@ namespace muchae
                     CurrentSpeed = input.sqrMagnitude > 0f ? speed : 0f;
 
                     return new Vector3(input.x, 0, input.y) * speed;
-                } */
+                } 
+        */
 
         private void UpdateVerticalVelocity()
         {
