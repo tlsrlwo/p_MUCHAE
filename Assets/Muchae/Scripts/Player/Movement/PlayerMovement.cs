@@ -55,6 +55,15 @@ namespace muchae
         public PlayerIdleState IdleState = new PlayerIdleState();
         public PlayerWalkState WalkState = new PlayerWalkState();
         public PlayerRunState RunState = new PlayerRunState();
+
+        [SerializeField] private float _idleCrossFadeDuration = 0.25f;          // idle 애니메이션 변환 타이머
+        private static readonly int[] IdleStateHashes =
+        {
+            Animator.StringToHash("Base Layer.Locomotion.IdleVariants.Idle1"),
+            Animator.StringToHash("Base Layer.Locomotion.IdleVariants.Idle2"),
+            Animator.StringToHash("Base Layer.Locomotion.IdleVariants.Idle3")
+        };
+
 #endregion
 
 
@@ -107,8 +116,52 @@ namespace muchae
 
         public void SetIdleVariant(int index)
         {
-            if(_anim == null) return;
-            _anim.SetFloat("IdleVariant", index);   
+            if (_anim == null) return;
+            _anim.SetFloat("IdleVariant", index);
+        }
+
+        public void PlayIdleVariant(int index)
+        {
+            if (_anim == null) return;
+
+            index = Mathf.Clamp(index, 0, IdleStateHashes.Length - 1);
+
+            // 지정된 Animator 상태로 초 단위 크로스페이드. idle 애니메이션 3 개를 돌아가면서 바뀌게 함
+            _anim.CrossFadeInFixedTime(IdleStateHashes[index], _idleCrossFadeDuration, 0);
+        }
+
+        // 현재 재생 중인 Idle 애니메이션이 루프 끝에 가까워졌는지 확인
+        public bool IsCurrentIdleNearEnd(float normalizedThreshold = 0.9f)
+        {
+            // Animator가 없거나 다른 애니메이션으로 전환 중이면 아직 확인하지 않음
+            if (_anim == null || _anim.IsInTransition(0))
+                return false;
+
+            // 현재 재생 중인 상태 정보 가져오기
+            AnimatorStateInfo stateInfo = _anim.GetCurrentAnimatorStateInfo(0);
+
+            // 현재 상태가 Idle1, Idle2, Idle3 중 하나인지 확인
+            bool isIdleState = false;
+
+            foreach (int idleStateHash in IdleStateHashes)
+            {
+                if (stateInfo.fullPathHash == idleStateHash)
+                {
+                    isIdleState = true;
+                    break;
+                }
+            }
+
+            // Idle 애니메이션이 아니면 전환 시점이 아니므로 false
+            if (!isIdleState)
+                return false;
+
+            // normalizedTime은 애니메이션 진행도를 나타냄
+            // 소수 부분만 사용해 현재 루프에서의 진행도를 계산
+            float loopProgress = stateInfo.normalizedTime % 1f;
+
+            // 진행도가 기준값(기본 0.9, 즉 루프의 90%) 이상이면 true
+            return loopProgress >= normalizedThreshold;
         }
         #endregion
 
