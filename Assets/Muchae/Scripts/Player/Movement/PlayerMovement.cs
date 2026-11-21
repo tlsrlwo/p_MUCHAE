@@ -15,6 +15,8 @@ namespace muchae
         [Header("플레이어 움직임")]
         [SerializeField] private float _walkSpeed = 3f;
         [SerializeField] private float _runSpeed = 8f;
+        [SerializeField] private float _rotationSmoothTime = 0.12f;
+        private float _rotationVelocity;
 
         [Header("중력 빛 바닥 검사")]
         [SerializeField] private float _groundCheckRadius = 0.2f;
@@ -26,10 +28,11 @@ namespace muchae
         [Header("참조")]
         private CharacterController _cController;
         private PlayerInputReader _pInput;
+        private PlayerCameraLook _playerCamera;
 
         [Header("애니메이션")]
         private Animator _anim;
-        [SerializeField] private float _animDampTime 0.1f;      // 값이 작으면 입력 변화에 빠르게 반응, 애니메이션 파라미터를 부드럽게 보간하기 위한 Damp 변수           
+        [SerializeField] private float _animDampTime = 0.1f;      // 값이 작으면 입력 변화에 빠르게 반응, 애니메이션 파라미터를 부드럽게 보간하기 위한 Damp 변수           
 
         public float CurrentSpeed { get; set; }
         public bool IsGrounded { get; private set; }
@@ -59,6 +62,7 @@ namespace muchae
         {
             _cController = GetComponent<CharacterController>();
             _pInput = GetComponent<PlayerInputReader>();
+            _playerCamera = GetComponent<PlayerCameraLook>();
             _anim = GetComponentInChildren<Animator>();
             if(_anim == null)
             {
@@ -106,7 +110,7 @@ namespace muchae
             if(_anim == null) return;
             _anim.SetFloat("IdleVariant", index);   
         }
-#endregion
+        #endregion
 
         private void Move()
         {
@@ -116,16 +120,41 @@ namespace muchae
             // 인풋 값을 가져오되, 1을 넘기지 않도록 설정
             Vector2 input = Vector2.ClampMagnitude(MoveInput, 1f);
 
-            // 애니메이션 파라미터 연결
-            if(_anim!= null)
+            // 인풋값의 방향을 가져옴
+            Vector3 moveDirection = _playerCamera.FlatCameraRight * input.x + _playerCamera.FlatCameraForward * input.y;
+
+            moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
+
+            // 입력값이 있을 경우
+            if (moveDirection.sqrMagnitude > 0.01f)
             {
-                _anim.SetFloat("xInput", input.x, _animDampTime, Time.deltaTime);
-                _anim.SetFloat("zInput", input.y, _animDampTime, Time.deltaTime);
+                // 플레이어의 목표 회전값
+                float targetAngle = Mathf.Atan2(moveDirection.x, moveDirection.z) * Mathf.Rad2Deg;
+
+                // SmoothDampAngle을 통해 현재 각도를 목표 각도까지 부드럽게 따라가게 하는 한다
+                float angle = Mathf.SmoothDampAngle(
+                    transform.eulerAngles.y,
+                    targetAngle,
+                    ref _rotationVelocity,
+                    _rotationSmoothTime
+                );
+
+                // 플레이어 캐릭터를 회전시켜줌 
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
             }
-            
+
+            // 애니메이션 파라미터 연결
+            Vector3 localMoveDirection = transform.InverseTransformDirection(moveDirection);
+
+            if (_anim != null)
+            {
+                _anim.SetFloat("xInput", localMoveDirection.x, _animDampTime, Time.deltaTime);
+                _anim.SetFloat("zInput", localMoveDirection.z, _animDampTime, Time.deltaTime);
+            }
+
 
             // 수평 이동 계산
-            Vector3 horizontalVelocity = new Vector3(input.x, 0f, input.y) * CurrentSpeed;
+            Vector3 horizontalVelocity = moveDirection * CurrentSpeed;
 
             UpdateVerticalVelocity();
 

@@ -32,6 +32,11 @@ namespace muchae
             _runInput = value.isPressed;
         }
 
+        public void OnLook(InputValue value)
+        {
+            _lookInput = value.Get<Vector2>();
+        }
+
         private void OnDisable()
         {
             // 비활성화될 때 이전 입력이 남지 않도록 초기화
