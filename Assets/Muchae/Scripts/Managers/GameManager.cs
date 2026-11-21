@@ -10,7 +10,7 @@ namespace muchae
 
         private void Awake()
         {
-            if(Instance == null)
+            if (Instance == null)
             {
                 Instance = this;
                 DontDestroyOnLoad(this.gameObject);
@@ -20,6 +20,18 @@ namespace muchae
                 Destroy(this.gameObject);
                 return;
             }
+        }
+
+        private void Start()
+        {
+            SetCursorLocked(true);
+        }
+        
+        public void SetCursorLocked(bool isLocked)
+        {
+            Cursor.lockState = isLocked ? CursorLockMode.Locked : CursorLockMode.None;
+
+            Cursor.visible = !isLocked;
         }
     }
 }

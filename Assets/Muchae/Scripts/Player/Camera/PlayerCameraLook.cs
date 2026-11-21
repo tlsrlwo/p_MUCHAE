@@ -13,12 +13,14 @@ namespace muchae
         private float _yaw;
         private float _pitch;
 
+        // 카메라가 보는 앞 방향에서 위아래 기울기를 빼고, 바닥에 투영한 수평 앞 방향을 구함
         public Vector3 FlatCameraForward
         {
             get
             {
                 // 플레이어의 현재 forward방향을 가져옴
                 Vector3 forward = _cameraTarget.forward;
+                // 위아래 방향을 제거
                 forward.y = 0f;
 
                 return forward.sqrMagnitude > 0.001f ? forward.normalized : transform.forward;
