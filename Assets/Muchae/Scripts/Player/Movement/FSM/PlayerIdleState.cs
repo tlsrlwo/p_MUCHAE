@@ -12,6 +12,7 @@ namespace muchae
         private int _pendingIdleIndex = -1;
 
         private float _idleTimer;
+        public float IdleTimer => _idleTimer;
         private float _nextIdleTime;
 
         public override void EnterState(PlayerMovement movement)
@@ -24,9 +25,9 @@ namespace muchae
             // Idle 상태에서는 이동 속도를 0으로 설정
             movement.CurrentSpeed = 0f;
 
-            // Idle에 진입할 때 세 애니메이션 중 하나를 무작위로 선택
+            // Idle에 진입할 때는 가장 기본 idle 모션으로 재생되게 설정
             _currentIdleIndex = 0;
-            // movement.PlayIdleVariant(_currentIdleIndex);
+            movement.PlayIdleVariant(_currentIdleIndex);
 
             // 대기 상태를 초기화하고 다음 전환까지의 시간을 설정
             _pendingIdleIndex = -1;
@@ -48,22 +49,26 @@ namespace muchae
 
             // 이동 입력이 없으면 계속 Idle 상태를 유지
             movement.CurrentSpeed = 0f;
+
+            // idleTimer 시작
             _idleTimer += Time.deltaTime;
 
             // 대기 시간이 끝났고 아직 다음 Idle을 예약하지 않았다면
-            // 현재 애니메이션과 다른 Idle을 선택해 예약
             if (_pendingIdleIndex < 0 && _idleTimer >= _nextIdleTime)
             {
+                // 현재 애니메이션과 다른 Idle을 선택해 예약
                 _pendingIdleIndex = GetDifferentIdleIndex(_currentIdleIndex);
             }
 
             // 다음 Idle이 예약되어 있고 현재 클립이 루프 끝에 가까우면 전환
             if (_pendingIdleIndex >= 0 && movement.IsCurrentIdleNearEnd())
             {
+                // 다음 Idle 애니메이션으로 부드럽게 전환
                 movement.PlayIdleVariant(_pendingIdleIndex);
 
                 // 방금 선택한 Idle을 현재 Idle로 기록
                 _currentIdleIndex = _pendingIdleIndex;
+                //_pendingIdleIndex 다시 초기화
                 _pendingIdleIndex = -1;
 
                 // 다음 랜덤 전환을 위한 타이머 초기화
@@ -80,8 +85,7 @@ namespace muchae
         // 현재 Idle과 다른 인덱스를 무작위로 선택
         private int GetDifferentIdleIndex(int currentIndex)
         {
-            // 0부터 1까지 선택한 뒤 현재 인덱스를 건너뛰어
-            // 결과적으로 0, 1, 2 중 현재와 다른 값을 반환
+            // 0부터 1까지 선택한 뒤 현재 인덱스를 건너뛰어 결과적으로 0, 1, 2 중 현재와 다른 값을 반환
             int nextIndex = Random.Range(0, IdleAnimCount - 1);
 
             if (nextIndex >= currentIndex)

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Animations;
 
 namespace muchae
 {
@@ -29,10 +30,12 @@ namespace muchae
         private CharacterController _cController;
         private PlayerInputReader _pInput;
         private PlayerCameraLook _playerCamera;
+        private Animator _anim;
 
         [Header("애니메이션")]
-        private Animator _anim;
         [SerializeField] private float _animDampTime = 0.1f;      // 값이 작으면 입력 변화에 빠르게 반응, 애니메이션 파라미터를 부드럽게 보간하기 위한 Damp 변수           
+        [SerializeField] private float _idleTimer;                // idle 애니메이션 변환 타이머
+        [SerializeField] private float _idleCrossFadeDuration = 0.25f; 
 
         public float CurrentSpeed { get; set; }
         public bool IsGrounded { get; private set; }
@@ -49,14 +52,15 @@ namespace muchae
         // 바닥 체크
         private Vector3 GroundCheckPosition => transform.position + Vector3.down * _groundCheckYOffset;
 
-#region 플레이어 FSM
+        #region 플레이어 FSM
         private PlayerStateBase _currentState;
+        
 
         public PlayerIdleState IdleState = new PlayerIdleState();
         public PlayerWalkState WalkState = new PlayerWalkState();
         public PlayerRunState RunState = new PlayerRunState();
 
-        [SerializeField] private float _idleCrossFadeDuration = 0.25f;          // idle 애니메이션 변환 타이머
+        //  Animator에 등록된 Idle 상태들의 해시값(Hash)을 배열에 저장
         private static readonly int[] IdleStateHashes =
         {
             Animator.StringToHash("Base Layer.Locomotion.IdleVariants.Idle1"),
@@ -90,6 +94,8 @@ namespace muchae
         {
             _currentState?.UpdateState(this);
             Move();
+
+            _idleTimer = IdleState.IdleTimer;
         }
 
         public void ChangeState(PlayerStateBase newState)
@@ -101,29 +107,31 @@ namespace muchae
             }
 
             // 플레이어 상태 변환
-            _currentState?.ExitState(this);            // _currentState 가 null 이 아닐 때 ExitState() 실행
+            _currentState?.ExitState(this);                  // _currentState 가 null 이 아닐 때 ExitState() 실행
             _currentState = newState;
             _currentState.EnterState(this);
         }
 
 #region 애니메이션
-        // 애니메이션 제어
+       
         public void SetAnimationState(PlayerAnimationState state)
         {
             if(_anim == null) return;
-            _anim.SetInteger("PlayerState", (int)state);
+            _anim.SetInteger("PlayerState", (int)state);     // 애니메이션 제어
         }
 
         public void SetIdleVariant(int index)
         {
             if (_anim == null) return;
-            _anim.SetFloat("IdleVariant", index);
+            _anim.SetFloat("IdleVariant", index);            // IdleVariant 는 animator의 파라미터
         }
 
+        // Animator에서 Idle 애니메이션을 자연스럽게 전환시키는 로직이 포함된 함수
         public void PlayIdleVariant(int index)
         {
             if (_anim == null) return;
 
+            // index값이 들어올 때 최대 IdleStatehases.Length -1 을 넘지 못하도록 제한 (IdleStateHashes는 3개이므로 0,1,2 가 되게끔)
             index = Mathf.Clamp(index, 0, IdleStateHashes.Length - 1);
 
             // 지정된 Animator 상태로 초 단위 크로스페이드. idle 애니메이션 3 개를 돌아가면서 바뀌게 함
@@ -133,7 +141,7 @@ namespace muchae
         // 현재 재생 중인 Idle 애니메이션이 루프 끝에 가까워졌는지 확인
         public bool IsCurrentIdleNearEnd(float normalizedThreshold = 0.9f)
         {
-            // Animator가 없거나 다른 애니메이션으로 전환 중이면 아직 확인하지 않음
+            // Animator가 없거나 다른 애니메이션으로 전환 중이면 반환
             if (_anim == null || _anim.IsInTransition(0))
                 return false;
 
@@ -143,6 +151,7 @@ namespace muchae
             // 현재 상태가 Idle1, Idle2, Idle3 중 하나인지 확인
             bool isIdleState = false;
 
+            // 현재 재생중인 애니메이션의 fullPathHash 가 idleStateHash 안에 있는 거면 현재 idle=true 인 상태. 루프 종료
             foreach (int idleStateHash in IdleStateHashes)
             {
                 if (stateInfo.fullPathHash == idleStateHash)
@@ -157,7 +166,7 @@ namespace muchae
                 return false;
 
             // normalizedTime은 애니메이션 진행도를 나타냄
-            // 소수 부분만 사용해 현재 루프에서의 진행도를 계산
+            // 1로 나눠서 남은값, 즉 소수 부분만 사용해 현재 루프에서의 진행도를 계산 (1.3 % 1f 는 0.3 을 의미)
             float loopProgress = stateInfo.normalizedTime % 1f;
 
             // 진행도가 기준값(기본 0.9, 즉 루프의 90%) 이상이면 true
@@ -173,15 +182,16 @@ namespace muchae
             // 인풋 값을 가져오되, 1을 넘기지 않도록 설정
             Vector2 input = Vector2.ClampMagnitude(MoveInput, 1f);
 
-            // 인풋값의 방향을 가져옴
+            // 인풋값의 방향을 가져옴 PlayerCamearLook의 FlatCameraRight, FlatCameraForward 사용
             Vector3 moveDirection = _playerCamera.FlatCameraRight * input.x + _playerCamera.FlatCameraForward * input.y;
 
+            // 각 Vector 범위의 최대값을 1로 제한
             moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
 
             // 입력값이 있을 경우
             if (moveDirection.sqrMagnitude > 0.01f)
             {
-                // 플레이어의 목표 회전값
+                // 플레이어의 목표 회전값을 도 단위로 변환
                 float targetAngle = Mathf.Atan2(moveDirection.x, moveDirection.z) * Mathf.Rad2Deg;
 
                 // SmoothDampAngle을 통해 현재 각도를 목표 각도까지 부드럽게 따라가게 하는 한다
@@ -192,13 +202,16 @@ namespace muchae
                     _rotationSmoothTime
                 );
 
-                // 플레이어 캐릭터를 회전시켜줌 
+                // 플레이어 캐릭터를 회전시켜줌
+                // SmoothDampAngle을 통해 현재 각도에서 목표 각도까지 매 프레임 부드럽게 보간하여 회전시킴
                 transform.rotation = Quaternion.Euler(0f, angle, 0f);
             }
 
             // 애니메이션 파라미터 연결
+            // 카메라 기준으로 계산된 이동 방향을 플레이어 자신의 로컬 좌표계 기준으로 변환
             Vector3 localMoveDirection = transform.InverseTransformDirection(moveDirection);
 
+            // Animator의 xInput, zInput 파라미터에 전달해서 캐릭터가 이동하는 방향에 맞는 애니메이션을 재생하도록
             if (_anim != null)
             {
                 _anim.SetFloat("xInput", localMoveDirection.x, _animDampTime, Time.deltaTime);
@@ -216,22 +229,6 @@ namespace muchae
 
             _cController.Move(velocity * Time.deltaTime);
         }
-
-        /*  수평 이동 계산기
-                private Vector3 CalculateHorizontalVelocity()
-                {
-                    // 인풋 값 가져와서 최대값을 1로 설정
-                    Vector2 input = Vector2.ClampMagnitude(_pInput.MoveInput, 1f);
-
-                    // 현재 속도 지정하기
-                    float speed = _pInput.RunInput ? _runSpeed : _walkSpeed;
-
-                    // 수평 이동속도 지정하기 
-                    CurrentSpeed = input.sqrMagnitude > 0f ? speed : 0f;
-
-                    return new Vector3(input.x, 0, input.y) * speed;
-                } 
-        */
 
         private void UpdateVerticalVelocity()
         {
